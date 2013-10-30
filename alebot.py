@@ -404,6 +404,19 @@ class Alebot(async_chat, IRCCommandsMixin):
         except Exception as e:
             print("No configuration loaded: %s" % e)
 
+    def save_config(self):
+        """
+            Save the current configuration to file.
+        """
+
+        try:
+            f = open('config.json', 'w')
+            json.dump(self.config, f, indent=4)
+            f.close()
+            print("Configuration saved.")
+        except Exception as e:
+            print("Configuration could not be saved: %s" % e)
+
     @classmethod
     def hook(cls, Hook):
         """
