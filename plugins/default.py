@@ -30,6 +30,16 @@ class CommandHook(Hook):
         return (event.name == 'PRIVMSG' and event.body == '%s: %s' % (
                     self.bot.config.get('nick'), self.command))
 
+class CommandParamHook(Hook):
+
+    """
+        In case you want your command to take parameters, too.
+    """
+
+    def match(self, event):
+        return (event.name == 'PRIVMSG' and event.body.startswith('%s: %s ' %
+                    (self.bot.config.get('nick'), self.command)))
+
 
 @Alebot.hook
 class SocketConnectedHook(Hook):
@@ -71,20 +81,3 @@ class PingPong(Hook):
     def call(self, event):
         print('Received ping, sending pong.')
         self.send_raw('PONG %s' % event.body)
-
-
-@Alebot.hook
-class JoinOnConnect(ConnectionReadyHook):
-
-    """
-        Join channels defined in the config file options `channels` on
-        connection. If there are any definied, if not, it does not
-        join any channels.
-    """
-
-    def call(self, event):
-        print("Joining channels..")
-        channels = self.bot.config.get('channels', [])
-        for channel in channels:
-            self.send_raw('JOIN %s' % channel)
-
