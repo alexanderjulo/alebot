@@ -160,16 +160,6 @@ class Alebot(async_chat):
         event = Event('SOCK_CONNECTED')
         self.call_hooks(event)
 
-    def send_raw(self, data):
-        """
-            Sends raw commands to the server. Only adds CLRF as a suffix.
-
-                :param data: the IRC command and body to send, fully
-                formatted as such.
-        """
-        crlfed = '%s\r\n' % data
-        self.push(crlfed.encode('utf-8', 'ignore'))
-
     def collect_incoming_data(self, data):
         """
             Collects the incoming data and adds it to the buffer.
@@ -228,6 +218,28 @@ class Alebot(async_chat):
             event.body = ' '.join(line)
 
         self.call_hooks(event)
+
+    def send_raw(self, data):
+        """
+            Sends raw commands to the server. Only adds CLRF as a suffix.
+
+                :param data: the IRC command and body to send, fully
+                formatted as such.
+        """
+        crlfed = '%s\r\n' % data
+        self.push(crlfed.encode('utf-8', 'ignore'))
+
+    def msg(self, target, text):
+        self.send_raw("PRIVMSG %s :%s" % (target, text))
+
+    def join(self, channel):
+        self.send_raw("JOIN %s" % (channel))
+
+    def part(self, channel, reason='Part.'):
+        self.send_raw("PART %s :%s" % (channel, reason))
+
+    def quit(self, reason='Quit.'):
+        self.send_raw("QUIT :%s" % reason)
 
 
 class Event(object):
