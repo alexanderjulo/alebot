@@ -169,7 +169,8 @@ class Alebot(async_chat):
                 :param data: the IRC command and body to send, fully
                 formatted as such.
         """
-        self.push('%s\r\n' % data)
+        crlfed = '%s\r\n' % data
+        self.push(crlfed.encode('utf-8', 'ignore'))
 
     def collect_incoming_data(self, data):
         """
