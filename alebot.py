@@ -3,6 +3,8 @@ import asyncore
 import socket
 import fnmatch
 import json
+import imp
+import pkgutil
 
 
 class Alebot(async_chat):
@@ -84,14 +86,23 @@ class Alebot(async_chat):
             This function does not do anything yet. Plugins have to be
             in the the same file as the bot itself.
         """
-        pass
+        for _, name, _ in pkgutil.iter_modules(['plugins']):
+            fid, pathname, desc = imp.find_module(name, ['plugins'])
+            try:
+                imp.load_module(name, fid, pathname, desc)
+                print("Loaded plugin '%s'" % pathname)
+            except Exception as e:
+                print("Could not load plugins '%s': %s"
+                        % (pathname, e.message))
+            if fid:
+                fid.close()
 
     def activate_hooks(self):
         """
             Will instantiate all the loaded hooks.
         """
         self.hooks = []
-        for Hook in self.Hooks:
+        for Hook in Alebot.Hooks:
             self.hooks.append(Hook(self))
 
     def call_hooks(self, event):
@@ -322,6 +333,9 @@ class Hook(object):
         files and stuff in the beginning. As soon as your bot will be
         initialized there will be a bot instance present although
         you won't be able to send data in the beginning.
+
+        You can check out the default alebot plugins for examples on
+        how to write plugins.
     """
 
     def __init__(self, bot):
@@ -384,73 +398,3 @@ class Hook(object):
             do.
         """
         raise NotImplementedError()
-
-
-class ConnectionReadyHook(Hook):
-
-    """
-        This is a hook that can be subclassed in case you want to react
-        on a irc connection that is ready for commands. It waits for
-        the end of the motd, or the message that there is no motd.
-
-        The :func:`match` function was implemented to listen to the
-        correct events. You will just have to overwrite the :func`call`
-        to actually do something.
-    """
-
-    def match(self, event):
-        return (event.name == '376' or event.name == '422')
-
-
-@Alebot.hook
-class SocketConnectedHook(Hook):
-
-    """
-        As the bot does nothing itself, this plugin takes care of
-        identifying the bot with the server. Yeah, seriously.
-
-        It uses the made up `SOCK_CONNECTED` event that is not even
-        an actual IRC event..
-    """
-
-    def match(self, event):
-        return (event.name == 'SOCK_CONNECTED')
-
-    def call(self, event):
-        self.send_raw("NICK %s" % 'alebot')
-        self.send_raw("USER %s * %s :%s" % ('alebot', 'alebot', 'alebot'))
-
-
-@Alebot.hook
-class PingPong(Hook):
-
-    """
-        As the bot does nothing by itself, this plugin takes care of
-        sending PONGs as answer to pings, as the bot won't even do that.
-
-        It matches the `PING` event to do that.
-    """
-
-    def match(self, event):
-        return (event.name == 'PING')
-
-    def call(self, event):
-        print('Received ping, sending pong.')
-        self.send_raw('PONG %s' % event.body)
-
-
-@Alebot.hook
-class JoinOnConnect(ConnectionReadyHook):
-
-    """
-        This hook will join a specific channel upon connection.
-    """
-
-    def call(self, event):
-        print('Connection successful. Joining a channel now.')
-        self.send_raw('JOIN %s' % '#aletest')
-
-
-if __name__ == '__main__':
-    bot = Alebot()
-    bot.connect()
