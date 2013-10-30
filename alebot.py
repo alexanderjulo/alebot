@@ -1,11 +1,19 @@
-import asyncore, socket
+import asyncore
+import socket
 from asynchat import async_chat
-import pkgutil, imp
+import pkgutil
+import imp
 import json
 import threading
 
 
 class IRCCommandsMixin(object):
+
+    """
+        This is just a helpful mixin to provide a few basic irc
+        command wrappers to different classes.
+    """
+
     def msg(self, target, text):
         self.send_raw("PRIVMSG %s :%s" % (target, text))
 
@@ -17,280 +25,6 @@ class IRCCommandsMixin(object):
 
     def quit(self, reason='Quit.'):
         self.send_raw("QUIT :%s" % reason)
-
-
-class Alebot(async_chat, IRCCommandsMixin):
-
-    """
-        The main bot class, where all the magic happens.
-
-        This class handles the socket and all incoming and outgoing
-        data. This classes methods should be used for sending data.
-
-        It keeps an index of loaded plugins and helps with the
-        management of requirements.
-
-        To interact witht he bot it supplies a hook function that can
-        be used to register callbacks with the bot.
-
-        Please check out :class:`Hook` and :func:`hook` to find out
-        how hooking your plugins in works.
-
-        Please note that this bot does absolutely nothing by itself.
-
-        It won't even answer pings or identify. But there are some
-        system plugins to do that. Check the plugins folder.
-
-            .. attribute:: config
-
-                Holds the bot configuration.
-
-            .. attribute:: Hooks
-
-                Registered hooks
-
-            .. attribute:: Plugins
-
-                Registered modules
-    """
-
-    Hooks = []
-    Plugins = {}
-
-    def __init__(self):
-        """
-            Initiates the parent and some necessary variables.
-
-            Then reads the configuration, finds all the plugins and their
-            hooks and instantiates them.
-        """
-        # system crap
-        async_chat.__init__(self)
-        self.set_terminator('\r\n')
-        self.buffer = ''
-
-        # load the default config
-        self.config = {
-            'nick': 'alebot',
-            'ident': 'alebot',
-            'realname': 'alebot python irc bot. https://github/alexex/alebot',
-            'server': 'irc.freenode.net',
-            'port': 6667
-        }
-
-        # load an eventual configuration
-        self.load_config()
-
-        # load plugins
-        self.load_plugins()
-
-        # activate plugin hooks
-        self.activate_hooks()
-
-    @classmethod
-    def load_plugins(cls):
-        """
-            Will load all the plugins from the plugin folder. It will
-            only load them though! The plugins still have to register
-            themselves with the :func:`hook` function, if they want to
-            interact with the bot.
-
-            This function does not do anything yet. Plugins have to be
-            in the the same file as the bot itself.
-        """
-        cls.Hooks = []
-        cls.Plugins = {}
-        for _, name, _ in pkgutil.iter_modules(['plugins']):
-            cls.load_plugin(name)
-
-    @classmethod
-    def load_plugin(cls, name):
-        """
-            Load a specific plugin. This will try to find a specific
-            plugin, load it and save it to the :class:`Alebot` class,
-            so that it can be retrieved later on.
-
-            It will also make sure, that plugins are only loaded once.
-        """
-        fid, pathname, desc = imp.find_module(name, ['plugins'])
-        if cls.Plugins.get(name):
-            return
-        try:
-            plugin = imp.load_module(name, fid, pathname, desc)
-            cls.Plugins[name] = plugin
-            print("Loaded plugin '%s' from '%s'" % (name, pathname))
-        except Exception as e:
-            print("Could not load plugins '%s': %s"
-                    % (pathname, e))
-        if fid:
-            fid.close()
-
-
-    @classmethod
-    def get_plugin(cls, name):
-        """
-            This is mainly a helper for inter dependency between
-            plugins. If one plugin requires another one, it can get
-            to it with this function. If the plugin has not been
-            loaded yet, it will try to load it. If it fails or does
-            not exist, the requiring plugin will also fail to load.
-        """
-        if not cls.Plugins.get(name):
-            cls.load_plugin(name)
-        return cls.Plugins[name]
-
-
-    def load_config(self):
-        """
-            Will open the local config file `config.json` and load
-            it as json. Will only accept a json object.
-
-            There are no required values. The file itself it optional.
-            The bot will supply default values, if there are none
-            specified.
-
-            Alebot itself makes use of the following options:
-
-                `nick`
-                `ident`
-                `realname`
-                `server`
-                `port`
-
-            Any additional option can be configured. Plugin developers
-            are encouraged to specifiy plugin objects with own
-            configuration, as long as they make sure to use a specific
-            name to avoid conflicts.
-        """
-        try:
-            f = open('config.json', 'r')
-            config = json.load(f)
-            f.close()
-            self.config = dict(self.config.items() + config.items())
-            print("Configuration loaded.")
-        except Exception as e:
-            print("No configuration loaded: %s" % e)
-
-    @classmethod
-    def hook(cls, Hook):
-        """
-            This method will register a hook with the bot. It is
-            supposed to be used as a decorator, but can also be used
-            as a normal function. Please see the :class:`Hook` class
-            documentation for an overview what a hook should look like.
-
-            This method will save the :class:`Hook` class with the
-            :class:`Bot` class until the :func:`__init__` function
-            instantiates the hooks.
-        """
-        cls.Hooks.append(Hook)
-
-    def activate_hooks(self):
-        """
-            Will instantiate all the loaded hooks.
-        """
-        self.hooks = []
-        for Hook in Alebot.Hooks:
-            self.hooks.append(Hook(self))
-
-    def call_hooks(self, event):
-        """
-            Will check through all instantiated plugins and call the
-            ones that match the given event.
-        """
-        for hook in self.hooks:
-            try:
-                if (hook.match(event)):
-                    hook.call(event)
-            except Exception as e:
-                print("Hook %s failed: %s" % (hook, e))
-
-    def connect(self):
-        """
-            Creates a socket and kicks off the connection process.
-        """
-        self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
-        async_chat.connect(self, (self.config['server'], self.config['port']))
-        asyncore.loop()
-
-    def handle_connect(self):
-        """
-            As soon as the socket is connected, the (made up) event
-            `SOCK_CONNECTED` will be called! Use it to identify
-            yourself. This bot does NOTHING by itself.
-        """
-        event = Event('SOCK_CONNECTED')
-        self.call_hooks(event)
-
-    def collect_incoming_data(self, data):
-        """
-            Collects the incoming data and adds it to the buffer.
-
-                :param data: The received data from the server.
-
-            **Please do not use this function manually! It is only
-            to be used by asnchat!**
-        """
-        self.buffer += data
-
-    def found_terminator(self):
-        """
-            As IRC is a line based protocol which means every command
-            is in its own line, this function is called as soon as a
-            line and thus a command has been completely received.
-
-            The line is read from the buffer and the buffer cleared.
-
-            The function only does very basic syntax correction, to
-            clear up input that does not match the usual format.
-
-            I.e. a PING command does not follow the usual syntax.
-
-            Thusly the function will get the relevant parameter and
-            fill it into the usual structure.
-
-            This function will call the func:`call_hooks` function with
-            the extracted data.
-        """
-
-        line = self.buffer
-        self.buffer = ''
-
-        line = line.split(' ', 3)
-
-        event = Event()
-
-        if (line[0][0] == ':'):
-
-            event.user = line[0][1:]
-            event.name = line[1]
-            event.target = line[2]
-
-            if (line[1] != 'JOIN'):
-                event.body = line[3][1:]
-
-        elif (line[0] == 'PING'):
-            event.name = line[0]
-            event.body = line[1][1:]
-        elif (line[0] == 'ERROR'):
-            event.name = 'ERROR'
-            event.body = ' '.join(line[1:])[1:]
-        else:
-            event.name = 'UNKNOWN'
-            event.body = ' '.join(line)
-
-        self.call_hooks(event)
-
-
-    def send_raw(self, data):
-        """
-            Sends raw commands to the server. Only adds CLRF as a suffix.
-
-                :param data: the IRC command and body to send, fully
-                formatted as such.
-        """
-        crlfed = '%s\r\n' % data
-        self.push(crlfed.encode('utf-8', 'ignore'))
 
 
 class Event(object):
@@ -518,4 +252,274 @@ class Task(threading.Thread):
             self.do()
         except Exception as e:
             print("Task %s failed: %s" % (self, e))
-        
+
+
+class Alebot(async_chat, IRCCommandsMixin):
+
+    """
+        The main bot class, where all the magic happens.
+
+        This class handles the socket and all incoming and outgoing
+        data. This classes methods should be used for sending data.
+
+        It keeps an index of loaded plugins and helps with the
+        management of requirements.
+
+        To interact witht he bot it supplies a hook function that can
+        be used to register callbacks with the bot.
+
+        Please check out :class:`Hook` and :func:`hook` to find out
+        how hooking your plugins in works.
+
+        Please note that this bot does absolutely nothing by itself.
+
+        It won't even answer pings or identify. But there are some
+        system plugins to do that. Check the plugins folder.
+
+            .. attribute:: config
+
+                Holds the bot configuration.
+
+            .. attribute:: Hooks
+
+                Registered hooks
+
+            .. attribute:: Plugins
+
+                Registered modules
+    """
+
+    Hooks = []
+    Plugins = {}
+
+    def __init__(self):
+        """
+            Initiates the parent and some necessary variables.
+
+            Then reads the configuration, finds all the plugins and their
+            hooks and instantiates them.
+        """
+        # system crap
+        async_chat.__init__(self)
+        self.set_terminator('\r\n')
+        self.buffer = ''
+
+        # load the default config
+        self.config = {
+            'nick': 'alebot',
+            'ident': 'alebot',
+            'realname': 'alebot python irc bot. https://github/alexex/alebot',
+            'server': 'irc.freenode.net',
+            'port': 6667
+        }
+
+        # load an eventual configuration
+        self.load_config()
+
+        # load plugins
+        self.load_plugins()
+
+        # activate plugin hooks
+        self.activate_hooks()
+
+    @classmethod
+    def load_plugins(cls):
+        """
+            Will load all the plugins from the plugin folder. It will
+            only load them though! The plugins still have to register
+            themselves with the :func:`hook` function, if they want to
+            interact with the bot.
+
+            This function does not do anything yet. Plugins have to be
+            in the the same file as the bot itself.
+        """
+        cls.Hooks = []
+        cls.Plugins = {}
+        for _, name, _ in pkgutil.iter_modules(['plugins']):
+            cls.load_plugin(name)
+
+    @classmethod
+    def load_plugin(cls, name):
+        """
+            Load a specific plugin. This will try to find a specific
+            plugin, load it and save it to the :class:`Alebot` class,
+            so that it can be retrieved later on.
+
+            It will also make sure, that plugins are only loaded once.
+        """
+        fid, pathname, desc = imp.find_module(name, ['plugins'])
+        if cls.Plugins.get(name):
+            return
+        try:
+            plugin = imp.load_module(name, fid, pathname, desc)
+            cls.Plugins[name] = plugin
+            print("Loaded plugin '%s' from '%s'" % (name, pathname))
+        except Exception as e:
+            print("Could not load plugins '%s': %s"
+                  % (pathname, e))
+        if fid:
+            fid.close()
+
+    @classmethod
+    def get_plugin(cls, name):
+        """
+            This is mainly a helper for inter dependency between
+            plugins. If one plugin requires another one, it can get
+            to it with this function. If the plugin has not been
+            loaded yet, it will try to load it. If it fails or does
+            not exist, the requiring plugin will also fail to load.
+        """
+        if not cls.Plugins.get(name):
+            cls.load_plugin(name)
+        return cls.Plugins[name]
+
+    def load_config(self):
+        """
+            Will open the local config file `config.json` and load
+            it as json. Will only accept a json object.
+
+            There are no required values. The file itself it optional.
+            The bot will supply default values, if there are none
+            specified.
+
+            Alebot itself makes use of the following options:
+
+                `nick`
+                `ident`
+                `realname`
+                `server`
+                `port`
+
+            Any additional option can be configured. Plugin developers
+            are encouraged to specifiy plugin objects with own
+            configuration, as long as they make sure to use a specific
+            name to avoid conflicts.
+        """
+        try:
+            f = open('config.json', 'r')
+            config = json.load(f)
+            f.close()
+            self.config = dict(self.config.items() + config.items())
+            print("Configuration loaded.")
+        except Exception as e:
+            print("No configuration loaded: %s" % e)
+
+    @classmethod
+    def hook(cls, Hook):
+        """
+            This method will register a hook with the bot. It is
+            supposed to be used as a decorator, but can also be used
+            as a normal function. Please see the :class:`Hook` class
+            documentation for an overview what a hook should look like.
+
+            This method will save the :class:`Hook` class with the
+            :class:`Bot` class until the :func:`__init__` function
+            instantiates the hooks.
+        """
+        cls.Hooks.append(Hook)
+
+    def activate_hooks(self):
+        """
+            Will instantiate all the loaded hooks.
+        """
+        self.hooks = []
+        for Hook in Alebot.Hooks:
+            self.hooks.append(Hook(self))
+
+    def call_hooks(self, event):
+        """
+            Will check through all instantiated plugins and call the
+            ones that match the given event.
+        """
+        for hook in self.hooks:
+            try:
+                if (hook.match(event)):
+                    hook.call(event)
+            except Exception as e:
+                print("Hook %s failed: %s" % (hook, e))
+
+    def connect(self):
+        """
+            Creates a socket and kicks off the connection process.
+        """
+        self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
+        async_chat.connect(self, (self.config['server'], self.config['port']))
+        asyncore.loop()
+
+    def handle_connect(self):
+        """
+            As soon as the socket is connected, the (made up) event
+            `SOCK_CONNECTED` will be called! Use it to identify
+            yourself. This bot does NOTHING by itself.
+        """
+        event = Event('SOCK_CONNECTED')
+        self.call_hooks(event)
+
+    def collect_incoming_data(self, data):
+        """
+            Collects the incoming data and adds it to the buffer.
+
+                :param data: The received data from the server.
+
+            **Please do not use this function manually! It is only
+            to be used by asnchat!**
+        """
+        self.buffer += data
+
+    def found_terminator(self):
+        """
+            As IRC is a line based protocol which means every command
+            is in its own line, this function is called as soon as a
+            line and thus a command has been completely received.
+
+            The line is read from the buffer and the buffer cleared.
+
+            The function only does very basic syntax correction, to
+            clear up input that does not match the usual format.
+
+            I.e. a PING command does not follow the usual syntax.
+
+            Thusly the function will get the relevant parameter and
+            fill it into the usual structure.
+
+            This function will call the func:`call_hooks` function with
+            the extracted data.
+        """
+
+        line = self.buffer
+        self.buffer = ''
+
+        line = line.split(' ', 3)
+
+        event = Event()
+
+        if (line[0][0] == ':'):
+
+            event.user = line[0][1:]
+            event.name = line[1]
+            event.target = line[2]
+
+            if (line[1] != 'JOIN'):
+                event.body = line[3][1:]
+
+        elif (line[0] == 'PING'):
+            event.name = line[0]
+            event.body = line[1][1:]
+        elif (line[0] == 'ERROR'):
+            event.name = 'ERROR'
+            event.body = ' '.join(line[1:])[1:]
+        else:
+            event.name = 'UNKNOWN'
+            event.body = ' '.join(line)
+
+        self.call_hooks(event)
+
+    def send_raw(self, data):
+        """
+            Sends raw commands to the server. Only adds CLRF as a suffix.
+
+                :param data: the IRC command and body to send, fully
+                formatted as such.
+        """
+        crlfed = '%s\r\n' % data
+        self.push(crlfed.encode('utf-8', 'ignore'))
