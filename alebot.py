@@ -124,8 +124,11 @@ class Alebot(async_chat, IRCCommandsMixin):
             ones that match the given event.
         """
         for hook in self.hooks:
-            if hook.match(event):
-                hook.call(event)
+            try:
+                if (hook.match(event)):
+                    hook.call(event)
+            except Exception as e:
+                print("Hook %s failed: %s" % (hook, e))
 
     def load_config(self):
         """
@@ -438,7 +441,7 @@ class Task(threading.Thread):
         You can basically overwrite the init event any pass less data,
         the example data her is just for convenience.
 
-        You will have to overwrite :func:`run` though. See the
+        You will have to overwrite :func:`do` though. See the
         functions documentation for more information.
 
         The task can be started using the :func:`start` function.
@@ -450,10 +453,23 @@ class Task(threading.Thread):
         self.hook = hook
         self.event = event
 
-    def run(self):
+    def do(self):
         """
             Override this with whatever your backgroundtask is
             supposed to do. Your function should take the :class:`Task`
             instance as a parameter.
         """
         raise NotImplementedError()
+
+    def run(self):
+        """
+            The run function is overwritten to call the do function
+            and catch any exceptions. This way bot crashes should be
+            avoided. So if you would like your bot to be stable, please
+            do not overwrite this, but the :func:`do` function.
+        """
+        try:
+            self.do()
+        except Exception as e:
+            print("Task %s failed: %s" % (self, e))
+        
