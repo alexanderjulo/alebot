@@ -310,6 +310,8 @@ class Event(object):
         return '<alebot.Event %s>' % (self.name)
 
     def _splitnickidenthost(self):
+        if not self.user:
+            return (None, None, None)
         split = self.user.split('!')
         if len(split) == 1:
             return (None, None, None)
