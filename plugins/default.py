@@ -31,8 +31,13 @@ class SocketConnectedHook(Hook):
         return (event.name == 'SOCK_CONNECTED')
 
     def call(self, event):
-        self.send_raw("NICK %s" % 'alebot')
-        self.send_raw("USER %s * %s :%s" % ('alebot', 'alebot', 'alebot'))
+        print("Socket is ready, logging in.")
+        self.send_raw("NICK %s" % self.bot.config['nick'])
+        self.send_raw("USER %s * %s :%s" % (
+            self.bot.config['ident'],
+            self.bot.config['ident'],
+            self.bot.config['realname']
+        ))
 
 
 @Alebot.hook
