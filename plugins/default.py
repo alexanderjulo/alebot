@@ -63,12 +63,12 @@ class JoinOnConnect(ConnectionReadyHook):
 
     """
         Join channels defined in the config file options `channels` on
-        connection. If there are any definied.
+        connection. If there are any definied, if not, it does not
+        join any channels.
     """
 
     def call(self, event):
         print("Joining channels..")
-        print self.bot.config
         channels = self.bot.config.get('channels', [])
         for channel in channels:
             self.send_raw('JOIN %s' % channel)
