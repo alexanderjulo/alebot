@@ -101,7 +101,7 @@ class ReloadHook(CommandHook):
         self.bot.load_config()
         self.bot.load_hooks()
         self.bot.activate_hooks()
-        self.send_raw("PRIVMSG %s :%s" % (event.target, "reloaded."))
+        self.msg(event.target, "reloaded.")
 
 
 
