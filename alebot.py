@@ -4,7 +4,21 @@ import pkgutil, imp
 import json
 
 
-class Alebot(async_chat):
+class IRCCommandsMixin(object):
+    def msg(self, target, text):
+        self.send_raw("PRIVMSG %s :%s" % (target, text))
+
+    def join(self, channel):
+        self.send_raw("JOIN %s" % (channel))
+
+    def part(self, channel, reason='Part.'):
+        self.send_raw("PART %s :%s" % (channel, reason))
+
+    def quit(self, reason='Quit.'):
+        self.send_raw("QUIT :%s" % reason)
+
+
+class Alebot(async_chat, IRCCommandsMixin):
 
     """
         The main bot class, where all the magic happens.
@@ -219,6 +233,7 @@ class Alebot(async_chat):
 
         self.call_hooks(event)
 
+
     def send_raw(self, data):
         """
             Sends raw commands to the server. Only adds CLRF as a suffix.
@@ -228,18 +243,6 @@ class Alebot(async_chat):
         """
         crlfed = '%s\r\n' % data
         self.push(crlfed.encode('utf-8', 'ignore'))
-
-    def msg(self, target, text):
-        self.send_raw("PRIVMSG %s :%s" % (target, text))
-
-    def join(self, channel):
-        self.send_raw("JOIN %s" % (channel))
-
-    def part(self, channel, reason='Part.'):
-        self.send_raw("PART %s :%s" % (channel, reason))
-
-    def quit(self, reason='Quit.'):
-        self.send_raw("QUIT :%s" % reason)
 
 
 class Event(object):
@@ -329,7 +332,7 @@ class Event(object):
         return self._host
 
 
-class Hook(object):
+class Hook(IRCCommandsMixin):
 
     """
         This is just a possible implementation for a hook. Every hook
