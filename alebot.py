@@ -86,6 +86,7 @@ class Alebot(async_chat):
             This function does not do anything yet. Plugins have to be
             in the the same file as the bot itself.
         """
+        Alebot.Hooks = []
         for _, name, _ in pkgutil.iter_modules(['plugins']):
             fid, pathname, desc = imp.find_module(name, ['plugins'])
             try:
