@@ -1,4 +1,4 @@
-from alebot import Alebot, Hook
+from alebot import Alebot, Hook, Event
 
 class ConnectionReadyHook(Hook):
 
@@ -87,21 +87,6 @@ class JoinOnConnect(ConnectionReadyHook):
         channels = self.bot.config.get('channels', [])
         for channel in channels:
             self.send_raw('JOIN %s' % channel)
-
-@Alebot.hook
-class ReloadHook(CommandHook):
-
-    """
-        Reloads config and plugins on request.
-    """
-
-    command = 'reload'
-
-    def call(self, event):
-        self.bot.load_config()
-        self.bot.load_hooks()
-        self.bot.activate_hooks()
-        self.msg(event.target, "reloaded.")
 
 
 
