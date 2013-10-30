@@ -16,6 +16,21 @@ class ConnectionReadyHook(Hook):
         return (event.name == '376' or event.name == '422')
 
 
+class CommandHook(Hook):
+    """
+        This is a hook that can be subclassed in case you want to react
+        to a message on a channel or in private. It will react to the
+        bot's current nickname followed by a colon and the command 
+        specified in the command attribute.
+    """
+
+    command = None
+
+    def match(self, event):
+        return (event.name == 'PRIVMSG' and event.body == '%s: %s' % (
+                    self.bot.config.get('nick'), self.command))
+
+
 @Alebot.hook
 class SocketConnectedHook(Hook):
 
@@ -74,14 +89,13 @@ class JoinOnConnect(ConnectionReadyHook):
             self.send_raw('JOIN %s' % channel)
 
 @Alebot.hook
-class ReloadHook(Hook):
+class ReloadHook(CommandHook):
 
     """
         Reloads config and plugins on request.
     """
 
-    def match(self, event):
-        return (event.name == 'PRIVMSG' and event.body == 'alebot reload')
+    command = 'reload'
 
     def call(self, event):
         self.bot.load_config()
