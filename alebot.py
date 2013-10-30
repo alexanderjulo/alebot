@@ -139,7 +139,7 @@ class Alebot(async_chat):
             Creates a socket and kicks off the connection process.
         """
         self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
-        async_chat.connect(self, ('irc.freenode.net', 6667))
+        async_chat.connect(self, (self.config['server'], self.config['port']))
         asyncore.loop()
 
     def handle_connect(self):
