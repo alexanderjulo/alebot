@@ -1,22 +1,19 @@
 from alebot import Alebot, Hook, Event
-from plugins.auth import admin_required
+auth = Alebot.get_plugin('auth')
 
 @Alebot.hook
-class ReloadHook(Hook):
+class ReloadHook(auth.AdminCommandHook):
 
     """
         Reloads config and plugins on request.
     """
 
-    @admin_required
-    def match(self, event):
-        return (event.name == 'PRIVMSG' and event.body == '%s: %s' % (
-                    self.bot.config.get('nick'), 'reload'))
+    command = 'reload'
 
     def call(self, event):
         print("Reloading")
         self.bot.load_config()
-        self.bot.load_hooks()
+        self.bot.load_plugins()
         self.bot.activate_hooks()
         self.msg(event.target, "reloaded.")
         event = Event('RELOAD')
