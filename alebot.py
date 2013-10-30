@@ -2,6 +2,7 @@ import asyncore, socket
 from asynchat import async_chat
 import pkgutil, imp
 import json
+import threading
 
 
 class IRCCommandsMixin(object):
@@ -418,5 +419,41 @@ class Hook(IRCCommandsMixin):
 
             Now you are free to send data or do whatever you have to
             do.
+        """
+        raise NotImplementedError()
+
+
+class Task(threading.Thread):
+
+    """
+        This class can be used to do stuff in the background. It can be
+        used for everything that might take some time and should not
+        block the bot in the meantime.
+
+        It expects the following parameters:
+
+            :param hook: the current hook instance (the active plugin)
+            :param event: the current event
+
+        You can basically overwrite the init event any pass less data,
+        the example data her is just for convenience.
+
+        You will have to overwrite :func:`run` though. See the
+        functions documentation for more information.
+
+        The task can be started using the :func:`start` function.
+    """
+
+    def __init__(self, hook, event):
+        threading.Thread.__init__(self)
+        self.bot = hook.bot
+        self.hook = hook
+        self.event = event
+
+    def run(self):
+        """
+            Override this with whatever your backgroundtask is
+            supposed to do. Your function should take the :class:`Task`
+            instance as a parameter.
         """
         raise NotImplementedError()
