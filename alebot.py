@@ -27,8 +27,11 @@ class Alebot(async_chat, IRCCommandsMixin):
         This class handles the socket and all incoming and outgoing
         data. This classes methods should be used for sending data.
 
-        It supplies a hook function with which plugins can register
-        their hooks to be notified if fitting data can be received.
+        It keeps an index of loaded plugins and helps with the
+        management of requirements.
+
+        To interact witht he bot it supplies a hook function that can
+        be used to register callbacks with the bot.
 
         Please check out :class:`Hook` and :func:`hook` to find out
         how hooking your plugins in works.
@@ -41,9 +44,18 @@ class Alebot(async_chat, IRCCommandsMixin):
             .. attribute:: config
 
                 Holds the bot configuration.
+
+            .. attribute:: Hooks
+
+                Registered hooks
+
+            .. attribute:: Plugins
+
+                Registered modules
     """
 
     Hooks = []
+    Plugins = {}
 
     def __init__(self):
         """
@@ -69,66 +81,64 @@ class Alebot(async_chat, IRCCommandsMixin):
         # load an eventual configuration
         self.load_config()
 
-        # load plugins and their hooks
-        self.load_hooks()
+        # load plugins
+        self.load_plugins()
 
-        # activate them
+        # activate plugin hooks
         self.activate_hooks()
 
     @classmethod
-    def hook(cls, Hook):
+    def load_plugins(cls):
         """
-            This method will register a hook with the bot. It is
-            supposed to be used as a decorator, but can also be used
-            as a normal function. Please see the :class:`Hook` class
-            documentation for an overview what a hook should look like.
-
-            This method will save the :class:`Hook` class with the
-            :class:`Bot` class until the :func:`__init__` function
-            instantiates the hooks.
-        """
-        cls.Hooks.append(Hook)
-
-    def load_hooks(self):
-        """
-            Will load all the hooks from the plugin folder. It will
+            Will load all the plugins from the plugin folder. It will
             only load them though! The plugins still have to register
-            themselves with the :func:`hook` function.
+            themselves with the :func:`hook` function, if they want to
+            interact with the bot.
 
             This function does not do anything yet. Plugins have to be
             in the the same file as the bot itself.
         """
-        Alebot.Hooks = []
+        cls.Hooks = []
+        cls.Plugins = {}
         for _, name, _ in pkgutil.iter_modules(['plugins']):
-            fid, pathname, desc = imp.find_module(name, ['plugins'])
-            try:
-                imp.load_module(name, fid, pathname, desc)
-                print("Loaded plugin '%s' from '%s'" % (name, pathname))
-            except Exception as e:
-                print("Could not load plugins '%s': %s"
-                        % (pathname, e))
-            if fid:
-                fid.close()
+            cls.load_plugin(name)
 
-    def activate_hooks(self):
+    @classmethod
+    def load_plugin(cls, name):
         """
-            Will instantiate all the loaded hooks.
-        """
-        self.hooks = []
-        for Hook in Alebot.Hooks:
-            self.hooks.append(Hook(self))
+            Load a specific plugin. This will try to find a specific
+            plugin, load it and save it to the :class:`Alebot` class,
+            so that it can be retrieved later on.
 
-    def call_hooks(self, event):
+            It will also make sure, that plugins are only loaded once.
         """
-            Will check through all instantiated plugins and call the
-            ones that match the given event.
+        fid, pathname, desc = imp.find_module(name, ['plugins'])
+        if cls.Plugins.get(name):
+            return
+        try:
+            plugin = imp.load_module(name, fid, pathname, desc)
+            cls.Plugins[name] = plugin
+            print("Loaded plugin '%s' from '%s'" % (name, pathname))
+        except Exception as e:
+            print("Could not load plugins '%s': %s"
+                    % (pathname, e))
+        if fid:
+            fid.close()
+
+
+    @classmethod
+    def get_plugin(cls, name):
         """
-        for hook in self.hooks:
-            try:
-                if (hook.match(event)):
-                    hook.call(event)
-            except Exception as e:
-                print("Hook %s failed: %s" % (hook, e))
+            This is mainly a helper for inter dependency between
+            plugins. If one plugin requires another one, it can get
+            to it with this function. If the plugin has not been
+            loaded yet, it will try to load it. If it fails or does
+            not exist, the requiring plugin will also fail to load.
+        """
+        if not cls.Plugins.get(name):
+            cls.load_plugin(name)
+        return cls.Plugins[name]
+
 
     def load_config(self):
         """
@@ -160,6 +170,40 @@ class Alebot(async_chat, IRCCommandsMixin):
             print("Configuration loaded.")
         except Exception as e:
             print("No configuration loaded: %s" % e)
+
+    @classmethod
+    def hook(cls, Hook):
+        """
+            This method will register a hook with the bot. It is
+            supposed to be used as a decorator, but can also be used
+            as a normal function. Please see the :class:`Hook` class
+            documentation for an overview what a hook should look like.
+
+            This method will save the :class:`Hook` class with the
+            :class:`Bot` class until the :func:`__init__` function
+            instantiates the hooks.
+        """
+        cls.Hooks.append(Hook)
+
+    def activate_hooks(self):
+        """
+            Will instantiate all the loaded hooks.
+        """
+        self.hooks = []
+        for Hook in Alebot.Hooks:
+            self.hooks.append(Hook(self))
+
+    def call_hooks(self, event):
+        """
+            Will check through all instantiated plugins and call the
+            ones that match the given event.
+        """
+        for hook in self.hooks:
+            try:
+                if (hook.match(event)):
+                    hook.call(event)
+            except Exception as e:
+                print("Hook %s failed: %s" % (hook, e))
 
     def connect(self):
         """
