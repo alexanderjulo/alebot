@@ -205,7 +205,6 @@ class Alebot(async_chat):
         line = self.buffer
         self.buffer = ''
 
-        print line
         line = line.split(' ', 3)
 
         event = Event()
