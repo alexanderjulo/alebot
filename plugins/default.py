@@ -73,6 +73,23 @@ class JoinOnConnect(ConnectionReadyHook):
         for channel in channels:
             self.send_raw('JOIN %s' % channel)
 
+@Alebot.hook
+class ReloadHook(Hook):
+
+    """
+        Reloads config and plugins on request.
+    """
+
+    def match(self, event):
+        return (event.name == 'PRIVMSG' and event.body == 'alebot reload')
+
+    def call(self, event):
+        self.bot.load_config()
+        self.bot.load_hooks()
+        self.bot.activate_hooks()
+        self.send_raw("PRIVMSG %s :%s" % (event.target, "reloaded."))
+
+
 
 @Alebot.hook
 class PrintAll(Hook):
