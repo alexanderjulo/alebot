@@ -2,6 +2,7 @@ from asynchat import async_chat
 import asyncore
 import socket
 import fnmatch
+import json
 
 
 class Alebot(async_chat):
@@ -22,21 +23,43 @@ class Alebot(async_chat):
 
         It won't even answer pings or identify. But there are some
         system plugins to do that. Check the plugins folder.
+
+            .. attribute:: config
+
+                Holds the bot configuration.
     """
 
     Hooks = []
 
     def __init__(self):
         """
-            Initiates the parent, some necessary variables, and
-            instantiates the hooks.
+            Initiates the parent and some necessary variables.
+
+            Then reads the configuration, finds all the plugins and their
+            hooks and instantiates them.
         """
+        # system crap
         async_chat.__init__(self)
         self.set_terminator('\r\n')
         self.buffer = ''
-        self.hooks = []
-        for Hook in self.Hooks:
-            self.hooks.append(Hook(self))
+
+        # load the default config
+        self.config = {
+            'nick': 'alebot',
+            'ident': 'alebot',
+            'realname': 'alebot python irc bot. https://github/alexex/alebot',
+            'server': 'irc.freenode.net',
+            'port': 6667
+        }
+
+        # load an eventual configuration
+        self.load_config()
+
+        # load plugins and their hooks
+        self.load_hooks()
+
+        # activate them
+        self.activate_hooks()
 
     @classmethod
     def hook(cls, Hook):
@@ -52,7 +75,7 @@ class Alebot(async_chat):
         """
         cls.Hooks.append(Hook)
 
-    def find_hooks(self):
+    def load_hooks(self):
         """
             Will load all the hooks from the plugin folder. It will
             only load them though! The plugins still have to register
@@ -63,10 +86,53 @@ class Alebot(async_chat):
         """
         pass
 
+    def activate_hooks(self):
+        """
+            Will instantiate all the loaded hooks.
+        """
+        self.hooks = []
+        for Hook in self.Hooks:
+            self.hooks.append(Hook(self))
+
     def call_hooks(self, event):
+        """
+            Will check through all instantiated plugins and call the
+            ones that match the given event.
+        """
         for hook in self.hooks:
             if hook.match(event):
                 hook.call(event)
+
+    def load_config(self):
+        """
+            Will open the local config file `config.json` and load
+            it as json. Will only accept a json object.
+
+            There are no required values. The file itself it optional.
+            The bot will supply default values, if there are none
+            specified.
+
+            Alebot itself makes use of the following options:
+
+                `nick`
+                `ident`
+                `realname`
+                `server`
+                `port`
+
+            Any additional option can be configured. Plugin developers
+            are encouraged to specifiy plugin objects with own
+            configuration, as long as they make sure to use a specific
+            name to avoid conflicts.
+        """
+        try:
+            f = open('config.json', 'r')
+            config = json.load(f)
+            f.close()
+            self.config = dict(self.config.items() + config.items())
+            print("Configuration loaded.")
+        except Exception as e:
+            print("No configuration loaded: %s" % e)
 
     def connect(self):
         """
