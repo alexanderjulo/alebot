@@ -116,7 +116,7 @@ class Event(object):
         return self._host
 
 
-class Hook(IRCCommandsMixin):
+class Hook(IRCCommandsMixin, object):
 
     """
         This is just a possible implementation for a hook. Every hook
