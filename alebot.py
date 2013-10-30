@@ -222,6 +222,12 @@ class Alebot(async_chat):
         elif (line[0] == 'PING'):
             event.name = line[0]
             event.body = line[1][1:]
+        elif (line[0] == 'ERROR'):
+            event.name = 'ERROR'
+            event.body = ' '.join(line[1:])[1:]
+        else:
+            event.name = 'UNKNOWN'
+            event.body = ' '.join(line)
 
         self.call_hooks(event)
 
