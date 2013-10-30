@@ -88,17 +88,3 @@ class JoinOnConnect(ConnectionReadyHook):
         for channel in channels:
             self.send_raw('JOIN %s' % channel)
 
-
-
-@Alebot.hook
-class PrintAll(Hook):
-
-    """
-        Prints all server input to the terminal.
-    """
-
-    def match(self, event):
-        return True
-
-    def call(self, event):
-        print(event.name, event.user, event.target, event.body)
