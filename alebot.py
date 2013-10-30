@@ -4,7 +4,7 @@ import socket
 import fnmatch
 
 
-class Bot(async_chat):
+class Alebot(async_chat):
 
     """
         The main bot class, where all the magic happens.
@@ -336,7 +336,7 @@ class ConnectionReadyHook(Hook):
         return (event.name == '376' or event.name == '422')
 
 
-@Bot.hook
+@Alebot.hook
 class SocketConnectedHook(Hook):
 
     """
@@ -355,7 +355,7 @@ class SocketConnectedHook(Hook):
         self.send_raw("USER %s * %s :%s" % ('alebot', 'alebot', 'alebot'))
 
 
-@Bot.hook
+@Alebot.hook
 class PingPong(Hook):
 
     """
@@ -373,7 +373,7 @@ class PingPong(Hook):
         self.send_raw('PONG %s' % event.body)
 
 
-@Bot.hook
+@Alebot.hook
 class JoinOnConnect(ConnectionReadyHook):
 
     """
@@ -386,5 +386,5 @@ class JoinOnConnect(ConnectionReadyHook):
 
 
 if __name__ == '__main__':
-    bot = Bot()
+    bot = Alebot()
     bot.connect()
