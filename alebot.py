@@ -93,7 +93,7 @@ class Alebot(async_chat):
                 print("Loaded plugin '%s'" % pathname)
             except Exception as e:
                 print("Could not load plugins '%s': %s"
-                        % (pathname, e.message))
+                        % (pathname, e))
             if fid:
                 fid.close()
 
