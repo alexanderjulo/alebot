@@ -1,10 +1,7 @@
+import asyncore, socket
 from asynchat import async_chat
-import asyncore
-import socket
-import fnmatch
+import pkgutil, imp
 import json
-import imp
-import pkgutil
 
 
 class Alebot(async_chat):
