@@ -512,7 +512,7 @@ class Alebot(async_chat, IRCCommandsMixin):
             event.name = line[1]
             event.target = line[2]
 
-            if (line[1] != 'JOIN'):
+            if(len(line) >= 4):
                 event.body = line[3][1:]
 
         elif (line[0] == 'PING'):
