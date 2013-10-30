@@ -59,6 +59,22 @@ class PingPong(Hook):
 
 
 @Alebot.hook
+class JoinOnConnect(ConnectionReadyHook):
+
+    """
+        Join channels defined in the config file options `channels` on
+        connection. If there are any definied.
+    """
+
+    def call(self, event):
+        print("Joining channels..")
+        print self.bot.config
+        channels = self.bot.config.get('channels', [])
+        for channel in channels:
+            self.send_raw('JOIN %s' % channel)
+
+
+@Alebot.hook
 class PrintAll(Hook):
 
     """
