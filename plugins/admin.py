@@ -1,6 +1,24 @@
 from alebot import Alebot, Hook, Event
 auth = Alebot.get_plugin('auth')
 
+
+@Alebot.hook
+class SaveHook(auth.AdminCommandHook):
+
+    """
+        Save current config state to disk.
+    """
+
+    command = 'save'
+
+    def call(self, event):
+        print("Saving")
+        self.bot.save_config()
+        self.msg(event.target, "saved.")
+        event = Event('SAVE')
+        self.bot.call_hooks(event)
+
+
 @Alebot.hook
 class ReloadHook(auth.AdminCommandHook):
 
