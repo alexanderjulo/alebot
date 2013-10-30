@@ -103,7 +103,7 @@ class Alebot(async_chat, IRCCommandsMixin):
             fid, pathname, desc = imp.find_module(name, ['plugins'])
             try:
                 imp.load_module(name, fid, pathname, desc)
-                print("Loaded plugin '%s'" % pathname)
+                print("Loaded plugin '%s' from '%s'" % (name, pathname))
             except Exception as e:
                 print("Could not load plugins '%s': %s"
                         % (pathname, e))
