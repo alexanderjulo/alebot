@@ -68,7 +68,7 @@ class Event(object):
             If the event has a message, reason or a similar thing,
             you will find it in body.
 
-        .. attibute:: target
+        .. attribute:: target
 
             The target of the action, a channel if it is a channel
             message, the bot's nick if it is a private one or anything
@@ -276,17 +276,17 @@ class Alebot(async_chat, IRCCommandsMixin):
         It won't even answer pings or identify. But there are some
         system plugins to do that. Check the plugins folder.
 
-            .. attribute:: config
+        .. attribute:: config
 
-                Holds the bot configuration.
+            Holds the bot configuration.
 
-            .. attribute:: Hooks
+        .. attribute:: Hooks
 
-                Registered hooks
+            Registered hooks
 
-            .. attribute:: Plugins
+        .. attribute:: Plugins
 
-                Registered modules
+            Registered modules
     """
 
     Hooks = []
@@ -384,11 +384,11 @@ class Alebot(async_chat, IRCCommandsMixin):
 
             Alebot itself makes use of the following options:
 
-                `nick`
-                `ident`
-                `realname`
-                `server`
-                `port`
+            - ``nick``
+            - ``ident``
+            - ``realname``
+            - ``server``
+            - ``port``
 
             Any additional option can be configured. Plugin developers
             are encouraged to specifiy plugin objects with own
@@ -472,7 +472,7 @@ class Alebot(async_chat, IRCCommandsMixin):
         """
             Collects the incoming data and adds it to the buffer.
 
-                :param data: The received data from the server.
+            :param data: The received data from the server.
 
             **Please do not use this function manually! It is only
             to be used by asnchat!**
@@ -531,7 +531,7 @@ class Alebot(async_chat, IRCCommandsMixin):
         """
             Sends raw commands to the server. Only adds CLRF as a suffix.
 
-                :param data: the IRC command and body to send, fully
+            :param data: the IRC command and body to send, fully
                 formatted as such.
         """
         crlfed = '%s\r\n' % data
