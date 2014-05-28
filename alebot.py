@@ -5,6 +5,7 @@ import pkgutil
 import imp
 import json
 import threading
+import logging
 
 
 class IRCCommandsMixin(object):
@@ -142,6 +143,11 @@ class Hook(IRCCommandsMixin, object):
 
         You can check out the default alebot plugins for examples on
         how to write plugins.
+
+        If you want to log data, it is recommended to access the bot's
+        logger using `self.bot.logger`. It supports python's usual
+        logging infrastructure and thus functions like `debug`, `info`,
+        `warn` and `error`.
     """
 
     def __init__(self, bot):
@@ -251,7 +257,7 @@ class Task(threading.Thread):
         try:
             self.do()
         except Exception as e:
-            print("Task %s failed: %s" % (self, e))
+            self.logger.error("Task %s failed: %s" % (self, e))
 
 
 class Alebot(async_chat, IRCCommandsMixin):
@@ -291,6 +297,7 @@ class Alebot(async_chat, IRCCommandsMixin):
 
     Hooks = []
     Plugins = {}
+    Logger = logging.getLogger('alebot')
 
     def __init__(self):
         """
@@ -310,7 +317,11 @@ class Alebot(async_chat, IRCCommandsMixin):
             'ident': 'alebot',
             'realname': 'alebot python irc bot. https://github/alexex/alebot',
             'server': 'irc.freenode.net',
-            'port': 6667
+            'port': 6667,
+            'log_to_stdout': True,
+            'log_level': 'INFO',
+            'log_formatter': '%(asctime)s - %(levelname)s - %(message)s',
+            'log_file': None
         }
 
         # load an eventual configuration
@@ -321,6 +332,33 @@ class Alebot(async_chat, IRCCommandsMixin):
 
         # activate plugin hooks
         self.activate_hooks()
+
+    @property
+    def logger(self):
+        """
+            To enable access to the logger from both class- and object
+            methods, this property is available.
+        """
+        return self.__class__.Logger
+
+    def configure_logging(self):
+        """
+            Depending on the configuration the log level and eventual
+            handlers for the logging have to be configured, which is
+            what this function does.
+        """
+        for handler in self.logger.handlers:
+            self.logger.removeHandler(handler)
+        self.logger.setLevel(self.config.get('log_level'))
+        formatter = logging.Formatter(self.config.get('log_formatter'))
+        if self.config.get('log_to_stdout'):
+            handler = logging.StreamHandler()
+            handler.setFormatter(formatter)
+            self.logger.addHandler(handler)
+        if self.config.get('log_file'):
+            handler = logging.FileHandler(self.config.get('log_file'))
+            handler.setFormatter(formatter)
+            self.logger.addHandler(handler)
 
     @classmethod
     def load_plugins(cls):
@@ -353,10 +391,9 @@ class Alebot(async_chat, IRCCommandsMixin):
         try:
             plugin = imp.load_module(name, fid, pathname, desc)
             cls.Plugins[name] = plugin
-            print("Loaded plugin '%s' from '%s'" % (name, pathname))
+            cls.Logger.info("Loaded plugin '%s' from '%s'" % (name, pathname))
         except Exception as e:
-            print("Could not load plugins '%s': %s"
-                  % (pathname, e))
+            cls.Logger.warning("Could not load plugins '%s': %s" % (pathname, e))
         if fid:
             fid.close()
 
@@ -395,14 +432,23 @@ class Alebot(async_chat, IRCCommandsMixin):
             configuration, as long as they make sure to use a specific
             name to avoid conflicts.
         """
+        error = False
         try:
             f = open('config.json', 'r')
             config = json.load(f)
             f.close()
             self.config = dict(self.config.items() + config.items())
-            print("Configuration loaded.")
         except Exception as e:
-            print("No configuration loaded: %s" % e)
+            error = e
+            config = False
+
+        # we need this little workaround to make sure that the config loading
+        # is logged according to the given settings.
+        self.configure_logging()
+        if config:
+            self.logger.info("Configuration loaded.")
+        else:
+            self.logger.info("No configuration loaded: %s" % error)
 
     def save_config(self):
         """
@@ -413,9 +459,9 @@ class Alebot(async_chat, IRCCommandsMixin):
             f = open('config.json', 'w')
             json.dump(self.config, f, indent=4)
             f.close()
-            print("Configuration saved.")
+            self.logger.info("Configuration saved.")
         except Exception as e:
-            print("Configuration could not be saved: %s" % e)
+            self.logger.info("Configuration could not be saved: %s" % e)
 
     @classmethod
     def hook(cls, Hook):
@@ -449,7 +495,7 @@ class Alebot(async_chat, IRCCommandsMixin):
                 if (hook.match(event)):
                     hook.call(event)
             except Exception as e:
-                print("Hook %s failed: %s" % (hook, e))
+                self.logger.error("Hook %s failed: %s" % (hook, e))
 
     def connect(self):
         """

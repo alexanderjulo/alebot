@@ -58,7 +58,7 @@ class SocketConnectedHook(Hook):
         return (event.name == 'SOCK_CONNECTED')
 
     def call(self, event):
-        print("Socket is ready, logging in.")
+        self.bot.logger.info("Socket is ready, logging in.")
         self.send_raw("NICK %s" % self.bot.config['nick'])
         self.send_raw("USER %s * %s :%s" % (
             self.bot.config['ident'],
@@ -81,5 +81,5 @@ class PingPong(Hook):
         return (event.name == 'PING')
 
     def call(self, event):
-        print('Received ping, sending pong.')
+        self.bot.logger.info('Received ping, sending pong.')
         self.send_raw('PONG %s' % event.body)

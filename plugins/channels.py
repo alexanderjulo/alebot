@@ -12,7 +12,7 @@ class JoinOnConnect(default.ConnectionReadyHook):
     """
 
     def call(self, event):
-        print("Joining channels..")
+        self.bot.logger.info("Joining channels..")
         channels = self.bot.config.get('channels', [])
         for channel in channels:
             self.send_raw('JOIN %s' % channel)
