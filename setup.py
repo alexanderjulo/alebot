@@ -1,6 +1,6 @@
 """
     alebot
-    ----------------
+    ------
 
     alebot is a super lean and highly modularized irc bot that lets you
     extend it in a python way, using classes and decorators. It supports
@@ -10,14 +10,14 @@
     `````
 
     * `source code <https://github.com/alexex/alebot>`_
-    * `docs <https://alebot.readthedocs.org/
+    * `docs <https://alebot.readthedocs.org/`_
 """
 from setuptools import setup
 
 
 setup(
     name='alebot',
-    version='0.1',
+    version='0.1.2',
     url='https://github.com/alexex/alebot',
     license='MIT',
     author='Alexander Jung-Loddenkemper',
