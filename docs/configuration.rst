@@ -31,3 +31,16 @@ logFormatter
 
 logFile
     Either `false` or the path to the logfile, if you want to enable file logging. Please note that if you enable file logging but do not disable logging to stdout, both will be used. (default: `false`)
+
+An example configuration could thus look like this::
+
+    {
+        "nick": "yourbot",
+        "server": "irc.example.com",
+        "port": 7000,
+        "logToStdout": false,
+        "logLevel": "DEBUG",
+        "logFile": "alebot.log"
+    }
+
+It only overwrites the settings where the defaults are unwanted.
