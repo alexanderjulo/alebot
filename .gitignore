@@ -1,3 +1,16 @@
-docs/_build
-.DS_Store
+# python stuff
 *.py[cdo]
+
+# mac crap
+.DS_Store
+
+# virtualenv
+.venv
+
+# documentation 
+docs/_build
+
+# setup files
+alebot.egg-info
+build
+dist
