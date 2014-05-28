@@ -16,22 +16,44 @@ class IRCCommandsMixin(object):
     """
 
     def msg(self, target, text):
+        """
+            Send a message to a target.
+
+                :param target: either a channel (with prefix) or a nick
+                :param text: the contents of the message
+        """
         self.send_raw("PRIVMSG %s :%s" % (target, text))
 
     def join(self, channel):
+        """
+            Join a channel.
+
+                :param channel: the channel to join (with prefix)
+        """
         self.send_raw("JOIN %s" % (channel))
 
     def part(self, channel, reason='Part.'):
+        """
+            Part a channel.
+
+                :param channel: the channel to part (with prefix)
+        """
         self.send_raw("PART %s :%s" % (channel, reason))
 
     def quit(self, reason='Quit.'):
+        """
+            Quit the server.
+
+                :param reason: the reason for the quit (will be shown
+                    to other users in common channels)
+        """
         self.send_raw("QUIT :%s" % reason)
 
 
 class Event(object):
 
     """
-        The :class:`Event` class is used to store data about the
+        The :class:`.Event` class is used to store data about the
         event and provide some helper methods that should save you
         some string manipulation.
 
@@ -175,7 +197,7 @@ class Hook(IRCCommandsMixin, object):
             to react to the event that is passed on. It has to accept
             one parameter:
 
-                :param event: an instance of the :class:`Event` class
+                :param event: an instance of the :class:`.Event` class
 
             Although theoretically possible I recommend to separate
             the evaluation of a match and the actual reaction for the
@@ -191,7 +213,7 @@ class Hook(IRCCommandsMixin, object):
             regarding your matching. You can match combinations of
             nick, ident, host, events, target and body.
 
-            Check out the :class:`Event` class to see what event data
+            Check out the :class:`.Event` class to see what event data
             is available.
 
             You can also use a regex or vary matches based on the time
@@ -204,7 +226,7 @@ class Hook(IRCCommandsMixin, object):
             In case that your :func:`match` function returned `True`
             this function will be called. It will again receive:
 
-                :param event: an instance of the :class:`Event` class
+                :param event: an instance of the :class:`.Event` class
 
             Now you are free to send data or do whatever you have to
             do.
@@ -242,7 +264,7 @@ class Task(threading.Thread):
     def do(self):
         """
             Override this with whatever your backgroundtask is
-            supposed to do. Your function should take the :class:`Task`
+            supposed to do. Your function should take the :class:`.Task`
             instance as a parameter.
         """
         raise NotImplementedError()
@@ -274,8 +296,8 @@ class Alebot(async_chat, IRCCommandsMixin):
         To interact witht he bot it supplies a hook function that can
         be used to register callbacks with the bot.
 
-        Please check out :class:`Hook` and :func:`hook` to find out
-        how hooking your plugins in works.
+        Please check out :class:`.Hook` and :func:`hook` to find
+        out how hooking your plugins in works.
 
         Please note that this bot does absolutely nothing by itself.
 
@@ -380,7 +402,7 @@ class Alebot(async_chat, IRCCommandsMixin):
     def load_plugin(cls, name):
         """
             Load a specific plugin. This will try to find a specific
-            plugin, load it and save it to the :class:`Alebot` class,
+            plugin, load it and save it to the :class:`.Alebot` class,
             so that it can be retrieved later on.
 
             It will also make sure, that plugins are only loaded once.
@@ -468,11 +490,11 @@ class Alebot(async_chat, IRCCommandsMixin):
         """
             This method will register a hook with the bot. It is
             supposed to be used as a decorator, but can also be used
-            as a normal function. Please see the :class:`Hook` class
+            as a normal function. Please see the :class:`.Hook` class
             documentation for an overview what a hook should look like.
 
-            This method will save the :class:`Hook` class with the
-            :class:`Bot` class until the :func:`__init__` function
+            This method will save the :class:`.Hook` class with the
+            :class:`.Alebot` class until the :func:`__init__` function
             instantiates the hooks.
         """
         cls.Hooks.append(Hook)
