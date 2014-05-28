@@ -99,19 +99,19 @@ class Event(object):
 
     @property
     def nick(self):
-        if self._nick == False:
+        if self._nick is False:
             self._nick = self._splitnickidenthost()[0]
         return self._nick
 
     @property
     def ident(self):
-        if self._ident == False:
+        if self._ident is False:
             self._ident = self._splitnickidenthost()[1]
         return self._ident
 
     @property
     def host(self):
-        if self._host == False:
+        if self._host is False:
             self._host = self._splitnickidenthost[2]
         return self._host
 

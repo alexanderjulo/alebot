@@ -1,4 +1,5 @@
-from alebot import Alebot, Hook, Event
+from alebot import Alebot, Hook
+
 
 class ConnectionReadyHook(Hook):
 
@@ -20,7 +21,7 @@ class CommandHook(Hook):
     """
         This is a hook that can be subclassed in case you want to react
         to a message on a channel or in private. It will react to the
-        bot's current nickname followed by a colon and the command 
+        bot's current nickname followed by a colon and the command
         specified in the command attribute.
     """
 
@@ -28,7 +29,8 @@ class CommandHook(Hook):
 
     def match(self, event):
         return (event.name == 'PRIVMSG' and event.body == '%s: %s' % (
-                    self.bot.config.get('nick'), self.command))
+            self.bot.config.get('nick'), self.command))
+
 
 class CommandParamHook(Hook):
 
@@ -38,7 +40,7 @@ class CommandParamHook(Hook):
 
     def match(self, event):
         return (event.name == 'PRIVMSG' and event.body.startswith('%s: %s ' %
-                    (self.bot.config.get('nick'), self.command)))
+                (self.bot.config.get('nick'), self.command)))
 
 
 @Alebot.hook

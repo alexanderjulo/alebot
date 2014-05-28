@@ -1,6 +1,7 @@
 from alebot import Alebot
 default = Alebot.get_plugin('default')
 
+
 @Alebot.hook
 class JoinOnConnect(default.ConnectionReadyHook):
 

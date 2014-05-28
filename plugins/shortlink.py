@@ -1,7 +1,7 @@
 import re
 import requests
 import json
-from alebot import Alebot, Hook, Event, Task
+from alebot import Alebot, Hook, Task
 
 
 @Alebot.hook
@@ -20,9 +20,9 @@ class ShortLink(Hook):
     """
 
     url_regex = re.compile(
-                    "http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|" \
-                    + "(?:%[0-9a-fA-F][0-9a-fA-F]))+"
-                )
+        "http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|"
+        + "(?:%[0-9a-fA-F][0-9a-fA-F]))+"
+    )
 
     def match(self, event):
         """

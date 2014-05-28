@@ -1,7 +1,8 @@
-from alebot import Alebot, Hook
+from alebot import Alebot
 from functools import wraps
 
 default = Alebot.get_plugin('default')
+
 
 def admin_required(f):
     """
@@ -91,15 +92,15 @@ class AdminManagementHook(AdminManager, AdminCommandParamHook):
 
     def call(self, event):
         print "called."
-        
+
         args = event.body.split(' ')
         if (len(args) < 3):
             self.msg_syntax_error(event)
             return
         action = args[2]
-        
+
         self.check_config()
-        
+
         if action == 'list':
             admins = ''
             for admin in self.bot.config['auth'].get('admins', []):
@@ -107,7 +108,7 @@ class AdminManagementHook(AdminManager, AdminCommandParamHook):
             admins = admins[:-2]
             self.msg(event.target, "Admins are: %s" % admins)
             return
-        
+
         if(len(args) < 4):
             self.msg_syntax_error(event)
 
