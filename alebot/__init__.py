@@ -1,3 +1,4 @@
+import os
 import asyncore
 import socket
 from asynchat import async_chat
@@ -319,19 +320,43 @@ class Alebot(async_chat, IRCCommandsMixin):
 
     Hooks = []
     Plugins = {}
+    _Paths = None
+    path = None
     Logger = logging.getLogger('alebot')
 
-    def __init__(self):
+    def __init__(self, path=None, disableLog=False):
         """
             Initiates the parent and some necessary variables.
 
             Then reads the configuration, finds all the plugins and their
             hooks and instantiates them.
+
+                :param path: path to the `config.json` and plugins folder.
         """
+        # unless we get disableLog we log level info to stdout until reading
+        # the config file
+        if not disableLog:
+            handler = logging.StreamHandler()
+            handler.setFormatter(logging.Formatter(
+                '%(asctime)s - %(levelname)s - %(message)s'))
+            self.logger.addHandler(handler)
+            self.logger.setLevel("INFO")
+        self.logger.info("Initiation the bot..")
+
+        # saving the path
+        if path:
+            self.path = path
+        else:
+            self.path = os.getcwd()
+        self.logger.info("Using '%s' as bot path." % self.path)
+
         # system crap
         async_chat.__init__(self)
         self.set_terminator('\r\n')
         self.buffer = ''
+
+        # access self.paths to init Alebot.Paths
+        self.paths
 
         # load the default config
         self.config = {
@@ -364,6 +389,43 @@ class Alebot(async_chat, IRCCommandsMixin):
         """
         return self.__class__.Logger
 
+    @classmethod
+    def Paths(cls, path=None):
+        """
+            The path storage. Use this to get the user & the systempath!
+        """
+        if not cls._Paths:
+            paths = []
+
+            # add system plugin path
+            if __file__:
+                paths.append(os.path.join(os.path.dirname(__file__),
+                             'plugins'))
+
+            # if an additional path was given, check for user plugins
+            if path:
+                userpath = os.path.join(path, 'plugins')
+                if not os.path.exists(path):
+                    cls.Logger.warn("User plugin path '%s' does not exist!" %
+                                    userpath)
+                elif not os.path.isdir(path):
+                    cls.Logger.warn("User plugin path '%s' is not a dir." %
+                                    userpath)
+                else:
+                    cls.Logger.info("User plugin path '%s' added.", userpath)
+                    paths.append(userpath)
+            else:
+                cls.Logger.warn("No user plugin path given!")
+            cls._Paths = paths
+        return cls._Paths
+
+    @property
+    def paths(self):
+        """
+            Shortcut to class-level Paths storage.
+        """
+        return self.__class__.Paths(self.path)
+
     def configure_logging(self):
         """
             Depending on the configuration the log level and eventual
@@ -372,19 +434,19 @@ class Alebot(async_chat, IRCCommandsMixin):
         """
         for handler in self.logger.handlers:
             self.logger.removeHandler(handler)
-        self.logger.setLevel(self.config.get('log_level'))
-        formatter = logging.Formatter(self.config.get('log_formatter'))
-        if self.config.get('log_to_stdout'):
+        self.logger.setLevel(self.config.get('logLevel'))
+        formatter = logging.Formatter(self.config.get('logFormatter'))
+        if self.config.get('logToStdout'):
             handler = logging.StreamHandler()
             handler.setFormatter(formatter)
             self.logger.addHandler(handler)
-        if self.config.get('log_file'):
-            handler = logging.FileHandler(self.config.get('log_file'))
+        if self.config.get('logFile'):
+            handler = logging.FileHandler(self.config.get('logFile'))
             handler.setFormatter(formatter)
             self.logger.addHandler(handler)
 
     @classmethod
-    def load_plugins(cls):
+    def load_plugins(cls, path=None):
         """
             Will load all the plugins from the plugin folder. It will
             only load them though! The plugins still have to register
@@ -396,11 +458,12 @@ class Alebot(async_chat, IRCCommandsMixin):
         """
         cls.Hooks = []
         cls.Plugins = {}
-        for _, name, _ in pkgutil.iter_modules(['plugins']):
+
+        for _, name, _ in pkgutil.iter_modules(cls.Paths()):
             cls.load_plugin(name)
 
     @classmethod
-    def load_plugin(cls, name):
+    def load_plugin(cls, name, path=[]):
         """
             Load a specific plugin. This will try to find a specific
             plugin, load it and save it to the :class:`.Alebot` class,
@@ -408,7 +471,9 @@ class Alebot(async_chat, IRCCommandsMixin):
 
             It will also make sure, that plugins are only loaded once.
         """
-        fid, pathname, desc = imp.find_module(name, ['plugins'])
+        if not path:
+            path = cls.Paths()
+        fid, pathname, desc = imp.find_module(name, path)
         if cls.Plugins.get(name):
             return
         try:
@@ -416,7 +481,8 @@ class Alebot(async_chat, IRCCommandsMixin):
             cls.Plugins[name] = plugin
             cls.Logger.info("Loaded plugin '%s' from '%s'" % (name, pathname))
         except Exception as e:
-            cls.Logger.warning("Could not load plugins '%s': %s" % (pathname, e))
+            cls.Logger.warning("Could not load plugin '%s': %s" %
+                               (pathname, e))
         if fid:
             fid.close()
 
@@ -456,8 +522,9 @@ class Alebot(async_chat, IRCCommandsMixin):
             name to avoid conflicts.
         """
         error = False
+        path = os.path.join(self.path, 'config.json')
         try:
-            f = open('config.json', 'r')
+            f = open(path, 'r')
             config = json.load(f)
             f.close()
             self.config = dict(self.config.items() + config.items())
