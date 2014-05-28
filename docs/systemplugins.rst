@@ -65,7 +65,7 @@ setting in the config file, i.e.::
     {"channels": ["#channel1", "#channel2"]}
 
 Shortlink
---------
+---------
 
 Shortlink is the only plugin that will not be loaded by default. This is
 due to the fact that it requires the ``requests`` module which I refuse

@@ -208,7 +208,7 @@ class Hook(IRCCommandsMixin, object):
             hook.
 
                 :returns: Either `True` or `False`, depending on
-                whether a match is given or not.
+                    whether a match is given or not.
 
             As this is a callback you have very high flexibility
             regarding your matching. You can match combinations of
