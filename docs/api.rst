@@ -41,33 +41,33 @@ System plugins
 Default
 _______
 
-.. automodule:: plugins.default
+.. automodule:: alebot.plugins.default
     :members:
 
 
 Auth
 ____
 
-.. automodule:: plugins.auth
+.. automodule:: alebot.plugins.auth
     :members:
 
 
 Admin
 _____
 
-.. automodule:: plugins.admin
+.. automodule:: alebot.plugins.admin
     :members:
 
 
 Channels
 ________
 
-.. automodule:: plugins.channels
+.. automodule:: alebot.plugins.channels
     :members:
 
 
 Shortlink
 _________
 
-.. automodule:: plugins.shortlink
+.. automodule:: alebot.plugins.shortlink
     :members:
