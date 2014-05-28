@@ -29,7 +29,7 @@ Auth
 The auth module provides capabilites for basic administrator management
 and authentication. It exposes a few commands to channels and privates.
 
-You can use commands in the following format in IRC to acces the functionality::
+You can use commands in the following format in IRC to access the functionality::
 
     <nick of the bot>: admin <list>
     <nick of the bot>: admin <add> <nick>
