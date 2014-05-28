@@ -499,6 +499,7 @@ class Alebot(async_chat, IRCCommandsMixin):
             instantiates the hooks.
         """
         cls.Hooks.append(Hook)
+        return Hook
 
     def activate_hooks(self):
         """
