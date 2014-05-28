@@ -337,13 +337,14 @@ class Alebot(async_chat, IRCCommandsMixin):
         self.config = {
             'nick': 'alebot',
             'ident': 'alebot',
-            'realname': 'alebot python irc bot. https://github/alexex/alebot',
+            'realname':
+            'alebot python irc bot. https://github.com/alexex/alebot',
             'server': 'irc.freenode.net',
             'port': 6667,
-            'log_to_stdout': True,
-            'log_level': 'INFO',
-            'log_formatter': '%(asctime)s - %(levelname)s - %(message)s',
-            'log_file': None
+            'logToStdout': True,
+            'logLevel': 'INFO',
+            'logFormatter': '%(asctime)s - %(levelname)s - %(message)s',
+            'logFile': False
         }
 
         # load an eventual configuration
