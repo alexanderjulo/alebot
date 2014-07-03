@@ -90,7 +90,7 @@ the execution of other hooks::
                 target = self.event.nick
             else:
                 target = self.event.target
-            self.bot.msg(tartget, self.event.body)
+            self.bot.msg(target, self.event.body)
 
 
     # we again use the decorator to activate the hook.
